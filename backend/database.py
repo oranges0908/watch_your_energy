@@ -1,6 +1,7 @@
 import aiosqlite
 from contextlib import asynccontextmanager
-from config import DB_PATH
+from typing import AsyncGenerator
+import config
 
 DDL = """
 CREATE TABLE IF NOT EXISTS projects (
@@ -72,7 +73,7 @@ INSERT OR IGNORE INTO app_state (id) VALUES (1);
 
 async def init_db() -> None:
     """Create all tables and seed the single app_state row. Idempotent."""
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with aiosqlite.connect(config.DB_PATH) as db:
         await db.executescript(DDL)
         await db.execute(INSERT_APP_STATE)
         await db.commit()
@@ -81,6 +82,13 @@ async def init_db() -> None:
 @asynccontextmanager
 async def get_db():
     """Async context manager yielding an aiosqlite connection with row_factory set."""
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with aiosqlite.connect(config.DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        yield db
+
+
+async def get_db_dep() -> AsyncGenerator[aiosqlite.Connection, None]:
+    """FastAPI Depends-compatible async generator for DB connections."""
+    async with aiosqlite.connect(config.DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         yield db
