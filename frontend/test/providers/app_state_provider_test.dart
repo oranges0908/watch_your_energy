@@ -71,7 +71,6 @@ void main() {
     when(() => mockApi.postSession()).thenAnswer((_) async => expected);
     when(() => mockApi.getState()).thenAnswer((_) async => expected);
 
-    final notifier = container.read(appStateProvider.notifier);
     await container.read(appStateProvider.future);
 
     final result = container.read(appStateProvider).value;

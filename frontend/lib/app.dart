@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:watch_your_energy/pages/create_project_page.dart';
 import 'package:watch_your_energy/pages/home_page.dart';
 import 'package:watch_your_energy/pages/progress_page.dart';
-import 'package:watch_your_energy/pages/create_project_page.dart';
+import 'package:watch_your_energy/theme/app_theme.dart';
 
 final _router = GoRouter(
   routes: [
@@ -28,10 +29,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'WatchYourEnergy',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A90D9)),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.theme,
       routerConfig: _router,
     );
   }
