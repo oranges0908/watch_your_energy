@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:watch_your_energy/providers/app_state_provider.dart';
+import 'package:watch_your_energy/providers/error_message_provider.dart';
 import 'package:watch_your_energy/providers/execution_state_provider.dart';
 import 'package:watch_your_energy/widgets/action_buttons.dart';
 import 'package:watch_your_energy/widgets/completion_flash.dart';
@@ -21,6 +22,18 @@ class HomePage extends ConsumerWidget {
 
     final isLoading = asyncState.isLoading;
     final appState = asyncState.value; // null only on first load
+
+    // Show SnackBar on network errors; clear after display.
+    ref.listen(errorMessageProvider, (_, message) {
+      if (message == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      ref.read(errorMessageProvider.notifier).state = null;
+    });
 
     // First load with no cached data → full-screen spinner
     if (appState == null && isLoading) {

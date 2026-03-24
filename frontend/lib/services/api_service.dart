@@ -31,6 +31,9 @@ abstract class ApiService {
 
   Future<AppState> postStepSkip(String stepId);
   Future<AppState> postStepStuck(String stepId);
+
+  /// Soft-archives a project (DELETE /projects/{id} → 204).
+  Future<void> deleteProject(String projectId);
 }
 
 class DioApiService implements ApiService {
@@ -98,6 +101,11 @@ class DioApiService implements ApiService {
       '/projects/$projectId/active',
     );
     return _fromStepProjectResponse(resp.data!);
+  }
+
+  @override
+  Future<void> deleteProject(String projectId) async {
+    await _dio.delete<void>('/projects/$projectId');
   }
 
   @override

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:watch_your_energy/models/app_state.dart';
+import 'package:watch_your_energy/providers/error_message_provider.dart';
 import 'package:watch_your_energy/providers/feedback_provider.dart';
 import 'package:watch_your_energy/services/api_service.dart';
 
@@ -14,7 +15,7 @@ final apiServiceProvider = Provider<ApiService>((ref) => DioApiService());
 ///   1. Set state to AsyncLoading with previous data preserved.
 ///   2. Call API.
 ///   3. On success: set state to AsyncData(newState).
-///   4. On failure: roll back to previous state (no crash).
+///   4. On failure: roll back to previous state + set errorMessageProvider.
 class AppStateNotifier extends AsyncNotifier<AppState> {
   @override
   Future<AppState> build() async {
@@ -72,6 +73,7 @@ class AppStateNotifier extends AsyncNotifier<AppState> {
       }
     } catch (_) {
       state = prev; // roll back
+      _setError();
     }
   }
 
@@ -107,6 +109,21 @@ class AppStateNotifier extends AsyncNotifier<AppState> {
     await _mutate(() => ref.read(apiServiceProvider).patchEnergy(next));
   }
 
+  /// Archives a project: DELETE → GET /state → update appState.
+  /// Callers should invalidate [projectListProvider] and navigate to '/'.
+  Future<void> archiveProject(String projectId) async {
+    final prev = state;
+    state = const AsyncLoading<AppState>().copyWithPrevious(prev);
+    try {
+      await ref.read(apiServiceProvider).deleteProject(projectId);
+      final newState = await ref.read(apiServiceProvider).getState();
+      state = AsyncData(newState);
+    } catch (_) {
+      state = prev;
+      _setError();
+    }
+  }
+
   // ── Private ───────────────────────────────────────────────────────────────
 
   /// Generic mutate helper: loading → call → success or rollback.
@@ -116,14 +133,22 @@ class AppStateNotifier extends AsyncNotifier<AppState> {
     try {
       final next = await call();
       // Preserve energy_mode from current state if the response doesn't change it.
-      final currentEnergyMode = state.value?.energyMode ?? prev.value?.energyMode ?? 'normal';
+      final currentEnergyMode =
+          state.value?.energyMode ?? prev.value?.energyMode ?? 'normal';
       state = AsyncData(next.copyWith(
-        energyMode: next.energyMode != 'normal' ? next.energyMode : currentEnergyMode,
-        onboardingComplete: next.onboardingComplete || (prev.value?.onboardingComplete ?? false),
+        energyMode:
+            next.energyMode != 'normal' ? next.energyMode : currentEnergyMode,
+        onboardingComplete:
+            next.onboardingComplete || (prev.value?.onboardingComplete ?? false),
       ));
     } catch (_) {
       state = prev; // roll back on any error
+      _setError();
     }
+  }
+
+  void _setError() {
+    ref.read(errorMessageProvider.notifier).state = '网络异常，请重试';
   }
 }
 

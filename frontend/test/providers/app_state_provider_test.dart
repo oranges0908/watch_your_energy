@@ -5,6 +5,7 @@ import 'package:watch_your_energy/models/app_state.dart';
 import 'package:watch_your_energy/models/project.dart';
 import 'package:watch_your_energy/models/step.dart';
 import 'package:watch_your_energy/providers/app_state_provider.dart';
+import 'package:watch_your_energy/providers/error_message_provider.dart';
 import 'package:watch_your_energy/providers/feedback_provider.dart';
 import 'package:watch_your_energy/services/api_service.dart';
 
@@ -217,5 +218,60 @@ void main() {
 
     final result = container.read(appStateProvider).value;
     expect(result?.energyMode, 'low');
+  });
+
+  // ── archiveProject ────────────────────────────────────────────────────────
+
+  test('archiveProject(): calls deleteProject + getState, updates state',
+      () async {
+    final initialState = _makeState(stepId: 'step-1');
+    final afterArchiveState = _makeState(stepId: 'step-2', progress: 0);
+
+    var getStateCallCount = 0;
+    when(() => mockApi.postSession()).thenAnswer((_) async => initialState);
+    when(() => mockApi.getState()).thenAnswer((_) async {
+      return getStateCallCount++ == 0 ? initialState : afterArchiveState;
+    });
+    when(() => mockApi.deleteProject('proj-1')).thenAnswer((_) async {});
+
+    await container.read(appStateProvider.future);
+    await container.read(appStateProvider.notifier).archiveProject('proj-1');
+
+    verify(() => mockApi.deleteProject('proj-1')).called(1);
+    final result = container.read(appStateProvider).value;
+    expect(result?.step?.id, 'step-2');
+  });
+
+  // ── errorMessageProvider ──────────────────────────────────────────────────
+
+  test('API error in _mutate → errorMessageProvider set to 网络异常', () async {
+    final initialState = _makeState(stepId: 'step-1');
+
+    when(() => mockApi.postSession()).thenAnswer((_) async => initialState);
+    when(() => mockApi.getState()).thenAnswer((_) async => initialState);
+    when(() => mockApi.postStepSkip('step-1'))
+        .thenThrow(Exception('network error'));
+
+    await container.read(appStateProvider.future);
+    await container.read(appStateProvider.notifier).onSkip();
+
+    expect(container.read(errorMessageProvider), '网络异常，请重试');
+    // State rolled back
+    expect(container.read(appStateProvider).value?.step?.id, 'step-1');
+  });
+
+  test('archiveProject() error → errorMessageProvider set', () async {
+    final initialState = _makeState(stepId: 'step-1');
+
+    when(() => mockApi.postSession()).thenAnswer((_) async => initialState);
+    when(() => mockApi.getState()).thenAnswer((_) async => initialState);
+    when(() => mockApi.deleteProject('proj-1'))
+        .thenThrow(Exception('server error'));
+
+    await container.read(appStateProvider.future);
+    await container.read(appStateProvider.notifier).archiveProject('proj-1');
+
+    expect(container.read(errorMessageProvider), '网络异常，请重试');
+    expect(container.read(appStateProvider).value?.step?.id, 'step-1');
   });
 }
