@@ -21,6 +21,7 @@ abstract class ApiService {
   Future<List<ProjectModel>> getProjects();
   Future<AppState> postProject(String title, List<int> completedPositions);
   Future<AppState> patchActiveProject(String projectId);
+  Future<ProjectDetail> getProjectDetail(String projectId);
 
   Future<AppState> postStepStart(String stepId);
 
@@ -97,6 +98,18 @@ class DioApiService implements ApiService {
       '/projects/$projectId/active',
     );
     return _fromStepProjectResponse(resp.data!);
+  }
+
+  @override
+  Future<ProjectDetail> getProjectDetail(String projectId) async {
+    final resp =
+        await _dio.get<Map<String, dynamic>>('/projects/$projectId');
+    final data = resp.data!;
+    final project = ProjectModel.fromJson(data);
+    final blocks = (data['blocks'] as List)
+        .map((e) => BlockModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return ProjectDetail(project: project, blocks: blocks);
   }
 
   // ── Steps ─────────────────────────────────────────────────────────────────

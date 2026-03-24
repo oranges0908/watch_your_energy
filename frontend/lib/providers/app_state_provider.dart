@@ -87,6 +87,20 @@ class AppStateNotifier extends AsyncNotifier<AppState> {
     await _mutate(() => ref.read(apiServiceProvider).postStepStuck(stepId));
   }
 
+  Future<void> createProject(
+      String title, List<int> completedPositions) async {
+    await _mutate(
+      () =>
+          ref.read(apiServiceProvider).postProject(title, completedPositions),
+    );
+  }
+
+  Future<void> switchProject(String projectId) async {
+    await _mutate(
+      () => ref.read(apiServiceProvider).patchActiveProject(projectId),
+    );
+  }
+
   Future<void> onEnergyToggle() async {
     final current = state.value?.energyMode ?? 'normal';
     final next = current == 'low' ? 'normal' : 'low';

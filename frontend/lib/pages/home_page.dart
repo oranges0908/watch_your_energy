@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:watch_your_energy/providers/app_state_provider.dart';
 import 'package:watch_your_energy/providers/execution_state_provider.dart';
 import 'package:watch_your_energy/widgets/action_buttons.dart';
 import 'package:watch_your_energy/widgets/completion_flash.dart';
+import 'package:watch_your_energy/widgets/energy_toggle.dart';
 import 'package:watch_your_energy/widgets/project_header.dart';
+import 'package:watch_your_energy/widgets/project_sidebar.dart';
 import 'package:watch_your_energy/widgets/step_card.dart';
 
 class HomePage extends ConsumerWidget {
@@ -45,46 +48,60 @@ class HomePage extends ConsumerWidget {
       );
     }
 
+    // No project → redirect to create page
+    if (appState != null && !appState.hasProject) {
+      Future.microtask(() {
+        if (context.mounted) context.go('/create');
+      });
+      return const Scaffold(body: SizedBox.shrink());
+    }
+
     return Scaffold(
+      drawer: const ProjectSidebar(),
       body: SafeArea(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ProjectHeader(project: appState?.project),
-                const SizedBox(height: 16),
-                // EnergyToggle — implemented in I7
-                Expanded(
-                  child: AnimatedStepCard(
-                    step: appState?.step,
-                    executionState: executionState,
+        child: Builder(
+          builder: (ctx) => Stack(
+            fit: StackFit.expand,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ProjectHeader(
+                    project: appState?.project,
+                    onSwitch: () => Scaffold.of(ctx).openDrawer(),
+                    onViewProgress: () => ctx.push('/progress'),
                   ),
-                ),
-                ActionButtons(
-                  executionState: executionState,
-                  isLoading: isLoading,
-                  onStart: () {
-                    ref.read(executionStateProvider.notifier).state =
-                        ExecutionState.executing;
-                  },
-                  onComplete: () async {
-                    await notifier.onComplete();
-                    ref.read(executionStateProvider.notifier).state =
-                        ExecutionState.idle;
-                  },
-                  onSkip: () => notifier.onSkip(),
-                  onStuck: () async {
-                    await notifier.onStuck();
-                    ref.read(executionStateProvider.notifier).state =
-                        ExecutionState.idle;
-                  },
-                ),
-              ],
-            ),
-            const CompletionFlash(),
-          ],
+                  const EnergyToggle(),
+                  Expanded(
+                    child: AnimatedStepCard(
+                      step: appState?.step,
+                      executionState: executionState,
+                    ),
+                  ),
+                  ActionButtons(
+                    executionState: executionState,
+                    isLoading: isLoading,
+                    onStart: () {
+                      ref.read(executionStateProvider.notifier).state =
+                          ExecutionState.executing;
+                    },
+                    onComplete: () async {
+                      await notifier.onComplete();
+                      ref.read(executionStateProvider.notifier).state =
+                          ExecutionState.idle;
+                    },
+                    onSkip: () => notifier.onSkip(),
+                    onStuck: () async {
+                      await notifier.onStuck();
+                      ref.read(executionStateProvider.notifier).state =
+                          ExecutionState.idle;
+                    },
+                  ),
+                ],
+              ),
+              const CompletionFlash(),
+            ],
+          ),
         ),
       ),
     );

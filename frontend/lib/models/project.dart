@@ -25,6 +25,14 @@ class ProjectModel {
   int get hashCode => id.hashCode;
 }
 
+/// Combined result for the progress page: project + its blocks.
+class ProjectDetail {
+  final ProjectModel project;
+  final List<BlockModel> blocks;
+
+  const ProjectDetail({required this.project, required this.blocks});
+}
+
 class BlockModel {
   final String id;
   final String title;
