@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-Architecture design is complete. Implementation has not started yet. All design documents are in `doc/`.
+Full MVP implementation complete (I1–I7). Docker + Railway deployment configured. All design documents are in `doc/`.
 
 ## Product Overview
 
@@ -73,7 +73,30 @@ flutter pub get
 flutter run                        # run on connected device/emulator
 flutter test                       # all widget/unit tests
 flutter test test/providers/       # single directory
+
+# Docker (local) — Gemini is default
+GEMINI_API_KEY=<key> docker compose up --build      # start backend on :8000
+LLM_PROVIDER=anthropic ANTHROPIC_API_KEY=<key> docker compose up --build
+docker compose down                                  # stop
+docker compose down -v                               # stop + delete volume (wipes DB)
 ```
+
+## Deployment
+
+**Docker**: backend only (`backend/Dockerfile`). SQLite data is persisted via a named volume (`db_data`).
+
+**Railway**:
+- `railway.toml` at repo root — points to `backend/Dockerfile`, sets healthcheck on `/docs`
+- Required env vars: `DB_PATH=/data/watch_your_energy.db` + LLM key (see below)
+- Add a Railway Volume mounted at `/data` to persist the SQLite file across deploys
+- Optional: `ALLOWED_ORIGINS` (comma-separated) for additional CORS origins
+
+**LLM env vars** (`LLM_PROVIDER` defaults to `"gemini"`):
+
+| Provider | Env vars required |
+|---|---|
+| Gemini (default) | `GEMINI_API_KEY`, optionally `GEMINI_MODEL` (default: `gemini-2.0-flash`) |
+| Anthropic | `LLM_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, optionally `ANTHROPIC_MODEL` |
 
 ## Tech Stack
 

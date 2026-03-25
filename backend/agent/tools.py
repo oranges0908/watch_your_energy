@@ -16,10 +16,10 @@ import time
 import uuid
 from typing import Any, Optional
 
-import anthropic
 import aiosqlite
 
-from config import LLM_API_KEY, LLM_MODEL, REJECTION_HISTORY_SIZE
+from config import REJECTION_HISTORY_SIZE
+from agent.llm_client import generate_text
 from agent.validators import validate_step, get_fallback
 from agent.prompt_builder import SYSTEM_PROMPT, build_user_prompt
 
@@ -271,15 +271,7 @@ async def tool_generate_step_candidate(
         extra_hint=extra_hint,
     )
 
-    client = anthropic.Anthropic(api_key=LLM_API_KEY)
-    message = client.messages.create(
-        model=LLM_MODEL,
-        max_tokens=256,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-
-    text = message.content[0].text.strip()
+    text = await generate_text(SYSTEM_PROMPT, user_prompt, max_tokens=256)
 
     # Strip markdown code fences if present
     if text.startswith("```"):

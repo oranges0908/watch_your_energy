@@ -1,0 +1,12 @@
+[build]
+# Build from the backend subdirectory
+dockerfilePath = "backend/Dockerfile"
+watchPatterns = ["backend/**"]
+
+[deploy]
+# Railway injects $PORT automatically; uvicorn reads it via CMD in Dockerfile
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/docs"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

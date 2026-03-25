@@ -5,6 +5,7 @@ Run:  cd backend && uvicorn main:app --reload
 """
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -22,9 +23,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="WatchYourEnergy", lifespan=lifespan)
 
+_extra_origins = [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:*", "http://10.0.2.2:*"],
+    allow_origins=["http://localhost:*", "http://10.0.2.2:*"] + _extra_origins,
     allow_origin_regex=r"http://localhost:\d+",
     allow_credentials=True,
     allow_methods=["*"],

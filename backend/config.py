@@ -3,11 +3,21 @@ from pathlib import Path
 
 # Paths
 BASE_DIR = Path(__file__).parent
-DB_PATH = BASE_DIR / "watch_your_energy.db"
+DB_PATH = Path(os.getenv("DB_PATH", str(BASE_DIR / "watch_your_energy.db")))
 
-# LLM
-LLM_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-LLM_MODEL = "claude-sonnet-4-6"
+# Server
+PORT: int = int(os.getenv("PORT", "8000"))
+
+# LLM provider — "gemini" (default) or "anthropic"
+LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")
+
+# Gemini
+GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
+# Anthropic (fallback / alternative)
+ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
 # Session
 SESSION_GAP_HOURS: float = 2.0
