@@ -5,6 +5,7 @@ Run:  cd backend && uvicorn main:app --reload
 """
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -13,6 +14,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
 from routers import state, projects, steps, blocks
+
+# LOG_LEVEL controls verbosity. Set to DEBUG to see full LLM input/output.
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+)
 
 
 @asynccontextmanager

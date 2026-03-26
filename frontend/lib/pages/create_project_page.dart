@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:watch_your_energy/providers/app_state_provider.dart';
 import 'package:watch_your_energy/providers/project_provider.dart';
 
-const _kBlockTitles = ['项目1', '项目2', '项目3', '总结'];
-
 class CreateProjectPage extends ConsumerStatefulWidget {
   const CreateProjectPage({super.key});
 
@@ -17,6 +15,10 @@ class CreateProjectPage extends ConsumerStatefulWidget {
 class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
   int _step = 1;
   String _title = '';
+
+  // Step 2 state
+  List<String> _blockTitles = [];
+  bool _loadingSuggestions = false;
   final Set<int> _checkedPositions = {};
   bool _isSubmitting = false;
 
@@ -24,16 +26,40 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
 
   bool get _canGoNext => _title.trim().isNotEmpty;
 
-  void _goToStep2() => setState(() => _step = 2);
+  Future<void> _goToStep2() async {
+    setState(() {
+      _step = 2;
+      _loadingSuggestions = true;
+      _checkedPositions.clear();
+    });
 
-  void _goToStep1() => setState(() => _step = 1);
+    try {
+      final titles =
+          await ref.read(apiServiceProvider).suggestBlocks(_title.trim());
+      if (mounted) setState(() => _blockTitles = titles);
+    } catch (_) {
+      // Fallback to generic titles on error
+      if (mounted) {
+        setState(() => _blockTitles = ['项目1', '项目2', '项目3', '总结']);
+      }
+    } finally {
+      if (mounted) setState(() => _loadingSuggestions = false);
+    }
+  }
+
+  void _goToStep1() => setState(() {
+        _step = 1;
+        _blockTitles = [];
+      });
 
   Future<void> _submit() async {
     setState(() => _isSubmitting = true);
     try {
-      await ref
-          .read(appStateProvider.notifier)
-          .createProject(_title.trim(), _checkedPositions.toList());
+      await ref.read(appStateProvider.notifier).createProject(
+            _title.trim(),
+            _checkedPositions.toList(),
+            _blockTitles,
+          );
       ref.invalidate(projectListProvider);
       if (mounted) context.go('/');
     } catch (_) {
@@ -115,37 +141,53 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
               ),
         ),
         const SizedBox(height: 16),
-        ..._kBlockTitles.asMap().entries.map((entry) {
-          final position = entry.key;
-          final title = entry.value;
-          return CheckboxListTile(
-            title: Text(title),
-            value: _checkedPositions.contains(position),
-            onChanged: (checked) {
-              setState(() {
-                if (checked == true) {
-                  _checkedPositions.add(position);
-                } else {
-                  _checkedPositions.remove(position);
-                }
-              });
-            },
-          );
-        }),
-        const Spacer(),
-        FilledButton(
-          onPressed: _isSubmitting ? null : _submit,
-          child: _isSubmitting
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : const Text('创建并开始'),
-        ),
+        if (_loadingSuggestions)
+          const Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 12),
+                  Text('正在为你推荐结构块…'),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          ..._blockTitles.asMap().entries.map((entry) {
+            final position = entry.key;
+            final title = entry.value;
+            return CheckboxListTile(
+              title: Text(title),
+              value: _checkedPositions.contains(position),
+              onChanged: (checked) {
+                setState(() {
+                  if (checked == true) {
+                    _checkedPositions.add(position);
+                  } else {
+                    _checkedPositions.remove(position);
+                  }
+                });
+              },
+            );
+          }),
+          const Spacer(),
+          FilledButton(
+            onPressed: _isSubmitting ? null : _submit,
+            child: _isSubmitting
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text('创建并开始'),
+          ),
+        ],
       ],
     );
   }

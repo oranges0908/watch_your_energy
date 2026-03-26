@@ -90,10 +90,11 @@ class AppStateNotifier extends AsyncNotifier<AppState> {
   }
 
   Future<void> createProject(
-      String title, List<int> completedPositions) async {
+      String title, List<int> completedPositions, List<String> blockTitles) async {
     await _mutate(
-      () =>
-          ref.read(apiServiceProvider).postProject(title, completedPositions),
+      () => ref
+          .read(apiServiceProvider)
+          .postProject(title, completedPositions, blockTitles),
     );
   }
 

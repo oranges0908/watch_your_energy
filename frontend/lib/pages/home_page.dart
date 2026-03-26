@@ -21,7 +21,7 @@ class HomePage extends ConsumerWidget {
     final notifier = ref.read(appStateProvider.notifier);
 
     final isLoading = asyncState.isLoading;
-    final appState = asyncState.value; // null only on first load
+    final appState = asyncState.value;
 
     // Show SnackBar on network errors; clear after display.
     ref.listen(errorMessageProvider, (_, message) {
@@ -69,52 +69,62 @@ class HomePage extends ConsumerWidget {
       return const Scaffold(body: SizedBox.shrink());
     }
 
+    // ── Main layout: fixed sidebar + content ──────────────────────────────
     return Scaffold(
-      drawer: const ProjectSidebar(),
       body: SafeArea(
-        child: Builder(
-          builder: (ctx) => Stack(
-            fit: StackFit.expand,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
+          children: [
+            // Fixed project list sidebar
+            const SizedBox(
+              width: 160,
+              child: ProjectSidebar(),
+            ),
+            const VerticalDivider(width: 1, thickness: 1),
+            // Main content
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  ProjectHeader(
-                    project: appState?.project,
-                    onSwitch: () => Scaffold.of(ctx).openDrawer(),
-                    onViewProgress: () => ctx.push('/progress'),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ProjectHeader(
+                        project: appState?.project,
+                        onViewProgress: () => context.push('/progress'),
+                      ),
+                      const EnergyToggle(),
+                      Expanded(
+                        child: AnimatedStepCard(
+                          step: appState?.step,
+                          executionState: executionState,
+                        ),
+                      ),
+                      ActionButtons(
+                        executionState: executionState,
+                        isLoading: isLoading,
+                        onStart: () {
+                          ref.read(executionStateProvider.notifier).state =
+                              ExecutionState.executing;
+                        },
+                        onComplete: () async {
+                          await notifier.onComplete();
+                          ref.read(executionStateProvider.notifier).state =
+                              ExecutionState.idle;
+                        },
+                        onSkip: () => notifier.onSkip(),
+                        onStuck: () async {
+                          await notifier.onStuck();
+                          ref.read(executionStateProvider.notifier).state =
+                              ExecutionState.idle;
+                        },
+                      ),
+                    ],
                   ),
-                  const EnergyToggle(),
-                  Expanded(
-                    child: AnimatedStepCard(
-                      step: appState?.step,
-                      executionState: executionState,
-                    ),
-                  ),
-                  ActionButtons(
-                    executionState: executionState,
-                    isLoading: isLoading,
-                    onStart: () {
-                      ref.read(executionStateProvider.notifier).state =
-                          ExecutionState.executing;
-                    },
-                    onComplete: () async {
-                      await notifier.onComplete();
-                      ref.read(executionStateProvider.notifier).state =
-                          ExecutionState.idle;
-                    },
-                    onSkip: () => notifier.onSkip(),
-                    onStuck: () async {
-                      await notifier.onStuck();
-                      ref.read(executionStateProvider.notifier).state =
-                          ExecutionState.idle;
-                    },
-                  ),
+                  const CompletionFlash(),
                 ],
               ),
-              const CompletionFlash(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

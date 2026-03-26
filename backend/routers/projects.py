@@ -29,6 +29,13 @@ async def list_projects(db: aiosqlite.Connection = Depends(get_db_dep)):
     return result
 
 
+@router.get("/suggest-blocks")
+async def suggest_blocks(title: str):
+    """Return LLM-suggested block titles for a project goal."""
+    titles = await project_service.suggest_block_titles(title)
+    return {"blocks": titles}
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_project(
     body: CreateProjectRequest,
@@ -39,6 +46,7 @@ async def create_project(
             db,
             title=body.title,
             completed_block_ids_positions=body.completed_block_positions,
+            block_titles=body.block_titles or None,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

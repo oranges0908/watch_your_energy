@@ -13,6 +13,8 @@ class CreateProjectRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=50)
     # 0-based position indices of blocks already completed by the user
     completed_block_positions: List[int] = []
+    # LLM-suggested block titles (exactly 4); empty list → use defaults
+    block_titles: List[str] = []
 
 
 class EnergyModeRequest(BaseModel):

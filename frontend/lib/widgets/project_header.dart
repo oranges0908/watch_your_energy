@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:watch_your_energy/models/project.dart';
 
 /// Shows project title, progress %, and an animated progress bar.
-/// [onSwitch] opens the project sidebar (wired in I6).
-/// [onViewProgress] navigates to the progress page (wired in I6).
+/// [onViewProgress] navigates to the progress page.
 class ProjectHeader extends StatelessWidget {
   final ProjectModel? project;
-  final VoidCallback? onSwitch;
   final VoidCallback? onViewProgress;
 
   const ProjectHeader({
     super.key,
     this.project,
-    this.onSwitch,
     this.onViewProgress,
   });
 
@@ -51,16 +48,6 @@ class ProjectHeader extends StatelessWidget {
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
-              ),
-              const SizedBox(width: 4),
-              TextButton(
-                onPressed: onSwitch,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('切换'),
               ),
             ],
           ),

@@ -271,7 +271,7 @@ async def tool_generate_step_candidate(
         extra_hint=extra_hint,
     )
 
-    text = await generate_text(SYSTEM_PROMPT, user_prompt, max_tokens=256)
+    text = await generate_text(SYSTEM_PROMPT, user_prompt, max_tokens=20480)
 
     # Strip markdown code fences if present
     if text.startswith("```"):

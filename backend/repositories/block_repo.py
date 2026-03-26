@@ -24,15 +24,21 @@ def _progress_to_status(pct: int) -> str:
 
 
 async def create_bulk(
-    db: aiosqlite.Connection, project_id: str
+    db: aiosqlite.Connection,
+    project_id: str,
+    titles: list[str] | None = None,
 ) -> list[dict]:
     """
-    Create the 4 fixed structure blocks for a project.
+    Create the 4 structure blocks for a project.
+    Uses `titles` when provided (must be exactly 4); falls back to BLOCK_TITLES.
     Returns list of created block dicts.
     """
+    effective_titles = (
+        titles if titles and len(titles) == 4 else BLOCK_TITLES
+    )
     now = int(time.time() * 1000)
     blocks = []
-    for position, title in enumerate(BLOCK_TITLES):
+    for position, title in enumerate(effective_titles):
         block_id = str(uuid.uuid4())
         await db.execute(
             "INSERT INTO blocks "

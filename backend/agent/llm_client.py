@@ -31,9 +31,18 @@ async def generate_text(
     Call the configured LLM provider and return the raw response text.
     Raises on API error (caller handles retries / fallback).
     """
+    logger.debug(
+        "[LLM] provider=%s  system_prompt:\n%s\n\nuser_prompt:\n%s",
+        LLM_PROVIDER, system_prompt, user_prompt,
+    )
+
     if LLM_PROVIDER == "anthropic":
-        return await _call_anthropic(system_prompt, user_prompt, max_tokens)
-    return await _call_gemini(system_prompt, user_prompt, max_tokens)
+        result = await _call_anthropic(system_prompt, user_prompt, max_tokens)
+    else:
+        result = await _call_gemini(system_prompt, user_prompt, max_tokens)
+
+    logger.debug("[LLM] response:\n%s", result)
+    return result
 
 
 # ── Gemini ────────────────────────────────────────────────────────────────────
@@ -43,16 +52,15 @@ async def _call_gemini(
     user_prompt: str,
     max_tokens: int,
 ) -> str:
-    import google.generativeai as genai  # lazy import — only needed for this provider
+    from google import genai  # lazy import — only needed for this provider
+    from google.genai import types
 
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel(
-        model_name=GEMINI_MODEL,
-        system_instruction=system_prompt,
-    )
-    response = await model.generate_content_async(
-        user_prompt,
-        generation_config=genai.types.GenerationConfig(
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    response = await client.aio.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=user_prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt,
             max_output_tokens=max_tokens,
             temperature=0.7,
         ),

@@ -19,7 +19,9 @@ abstract class ApiService {
   Future<AppState> patchEnergy(String mode);
 
   Future<List<ProjectModel>> getProjects();
-  Future<AppState> postProject(String title, List<int> completedPositions);
+  Future<List<String>> suggestBlocks(String title);
+  Future<AppState> postProject(
+      String title, List<int> completedPositions, List<String> blockTitles);
   Future<AppState> patchActiveProject(String projectId);
   Future<ProjectDetail> getProjectDetail(String projectId);
 
@@ -83,13 +85,23 @@ class DioApiService implements ApiService {
   }
 
   @override
+  Future<List<String>> suggestBlocks(String title) async {
+    final resp = await _dio.get<Map<String, dynamic>>(
+      '/projects/suggest-blocks',
+      queryParameters: {'title': title},
+    );
+    return (resp.data!['blocks'] as List).cast<String>();
+  }
+
+  @override
   Future<AppState> postProject(
-      String title, List<int> completedPositions) async {
+      String title, List<int> completedPositions, List<String> blockTitles) async {
     final resp = await _dio.post<Map<String, dynamic>>(
       '/projects',
       data: {
         'title': title,
         'completed_block_positions': completedPositions,
+        'block_titles': blockTitles,
       },
     );
     return _fromStepProjectResponse(resp.data!);

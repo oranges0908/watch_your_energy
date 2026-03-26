@@ -18,6 +18,8 @@ class MockApiService extends Mock implements ApiService {}
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
+const _kSuggestedTitles = ['工作经历', '项目经历', '技能介绍', '整体润色'];
+
 AppState _makeState() => const AppState(
       step: StepModel(
         id: 's1',
@@ -25,7 +27,7 @@ AppState _makeState() => const AppState(
         estimatedMin: 10,
         pattern: 'Bootstrap',
         stepType: 'Bootstrap',
-        blockTitle: '项目1',
+        blockTitle: '工作经历',
         energyLevel: 'normal',
       ),
       project: ProjectModel(id: 'p1', title: '优化简历', progressPct: 0),
@@ -53,8 +55,6 @@ Widget _buildApp(MockApiService api) {
   return ProviderScope(
     overrides: [
       apiServiceProvider.overrideWithValue(api),
-      // Keep appStateProvider in an initial loading state so it doesn't
-      // attempt real API calls and interfere with create-page tests.
       projectListProvider.overrideWith(
         (ref) async => const <ProjectModel>[],
       ),
@@ -73,7 +73,6 @@ void main() {
 
   setUp(() {
     mockApi = MockApiService();
-    // appStateProvider build() → postSession + getState
     const emptyState = AppState(
       step: null,
       project: null,
@@ -82,6 +81,8 @@ void main() {
     );
     when(() => mockApi.postSession()).thenAnswer((_) async => emptyState);
     when(() => mockApi.getState()).thenAnswer((_) async => emptyState);
+    when(() => mockApi.suggestBlocks(any()))
+        .thenAnswer((_) async => _kSuggestedTitles);
   });
 
   // ── Step 1 ────────────────────────────────────────────────────────────────
@@ -105,20 +106,20 @@ void main() {
     expect(btn.onPressed, isNotNull);
   });
 
-  testWidgets('Step1→Step2: tap下一步显示4个CheckboxListTile', (tester) async {
+  testWidgets('Step1→Step2: 加载完成后显示LLM推荐的4个块', (tester) async {
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), '优化简历');
     await tester.pump();
     await tester.tap(find.text('下一步'));
-    await tester.pump();
+    await tester.pumpAndSettle(); // waits for suggestBlocks to complete
 
     expect(find.byType(CheckboxListTile), findsNWidgets(4));
-    expect(find.text('项目1'), findsOneWidget);
-    expect(find.text('项目2'), findsOneWidget);
-    expect(find.text('项目3'), findsOneWidget);
-    expect(find.text('总结'), findsOneWidget);
+    expect(find.text('工作经历'), findsOneWidget);
+    expect(find.text('项目经历'), findsOneWidget);
+    expect(find.text('技能介绍'), findsOneWidget);
+    expect(find.text('整体润色'), findsOneWidget);
   });
 
   testWidgets('Step2: 「创建并开始」按钮可点击', (tester) async {
@@ -128,7 +129,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '优化简历');
     await tester.pump();
     await tester.tap(find.text('下一步'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     final btn = tester.widget<FilledButton>(find.byType(FilledButton));
     expect(btn.onPressed, isNotNull);
@@ -136,27 +137,23 @@ void main() {
 
   testWidgets('提交成功：调用postProject并导航到"/"', (tester) async {
     final newState = _makeState();
-    when(() => mockApi.postProject('优化简历', any())).thenAnswer(
-      (_) async => newState,
-    );
+    when(() => mockApi.postProject('优化简历', any(), any()))
+        .thenAnswer((_) async => newState);
     when(() => mockApi.getProjects())
         .thenAnswer((_) async => [newState.project!]);
 
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
 
-    // Step 1: enter title
     await tester.enterText(find.byType(TextField), '优化简历');
     await tester.pump();
     await tester.tap(find.text('下一步'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    // Step 2: tap 创建并开始
     await tester.tap(find.text('创建并开始'));
     await tester.pumpAndSettle();
 
-    verify(() => mockApi.postProject('优化简历', any())).called(1);
-    // Navigated to '/' — home page text should be visible
+    verify(() => mockApi.postProject('优化简历', any(), any())).called(1);
     expect(find.text('首页'), findsOneWidget);
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:watch_your_energy/models/app_state.dart';
 import 'package:watch_your_energy/models/project.dart';
@@ -35,9 +36,6 @@ AppState _makeState(ProjectModel project) => AppState(
       onboardingComplete: true,
     );
 
-// Fake notifier: extends AppStateNotifier so overrideWith type-checks.
-// Overrides only build(). switchProject uses the real implementation,
-// which calls patchActiveProject via the mocked apiServiceProvider.
 class _FakeNotifier extends AppStateNotifier {
   _FakeNotifier(this._state);
   final AppState _state;
@@ -48,12 +46,25 @@ class _FakeNotifier extends AppStateNotifier {
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
-/// Plain MaterialApp with Scaffold+Drawer — provides Navigator and Overlay.
 Widget _buildApp(
   MockApiService api,
   List<ProjectModel> projects,
   ProjectModel activeProject,
 ) {
+  final router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, __) => const Scaffold(body: ProjectSidebar()),
+      ),
+      GoRoute(
+        path: '/create',
+        builder: (_, __) => const Scaffold(body: Text('新建页面')),
+      ),
+    ],
+  );
+
   return ProviderScope(
     overrides: [
       apiServiceProvider.overrideWithValue(api),
@@ -62,17 +73,9 @@ Widget _buildApp(
         () => _FakeNotifier(_makeState(activeProject)),
       ),
     ],
-    child: MaterialApp(
+    child: MaterialApp.router(
       theme: AppTheme.theme,
-      home: Scaffold(
-        drawer: const ProjectSidebar(),
-        body: Builder(
-          builder: (ctx) => TextButton(
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-            child: const Text('open'),
-          ),
-        ),
-      ),
+      routerConfig: router,
     ),
   );
 }
@@ -88,7 +91,7 @@ void main() {
 
   // ── 项目上限 ──────────────────────────────────────────────────────────────
 
-  testWidgets('projects.length=3：「新建Project」disabled', (tester) async {
+  testWidgets('projects.length=3：「新建」disabled', (tester) async {
     final projects = [
       _makeProject('p1', '优化简历'),
       _makeProject('p2', '学习Flutter'),
@@ -98,19 +101,16 @@ void main() {
     await tester.pumpWidget(_buildApp(mockApi, projects, projects[0]));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
-
     final tile = tester.widget<ListTile>(
       find.ancestor(
-        of: find.text('新建 Project'),
+        of: find.text('新建'),
         matching: find.byType(ListTile),
       ),
     );
     expect(tile.enabled, isFalse);
   });
 
-  testWidgets('projects.length=2：「新建Project」enabled', (tester) async {
+  testWidgets('projects.length=2：「新建」enabled', (tester) async {
     final projects = [
       _makeProject('p1', '优化简历'),
       _makeProject('p2', '学习Flutter'),
@@ -119,12 +119,9 @@ void main() {
     await tester.pumpWidget(_buildApp(mockApi, projects, projects[0]));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
-
     final tile = tester.widget<ListTile>(
       find.ancestor(
-        of: find.text('新建 Project'),
+        of: find.text('新建'),
         matching: find.byType(ListTile),
       ),
     );
@@ -141,9 +138,6 @@ void main() {
         .thenAnswer((_) async => _makeState(p2));
 
     await tester.pumpWidget(_buildApp(mockApi, [p1, p2], p1));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('学习Flutter'));
