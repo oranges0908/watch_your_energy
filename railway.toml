@@ -1,6 +1,7 @@
 [build]
 # Build from the backend subdirectory
 dockerfilePath = "backend/Dockerfile"
+dockerContextPath = "backend"
 watchPatterns = ["backend/**"]
 
 [deploy]
