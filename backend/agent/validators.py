@@ -3,7 +3,7 @@ Step format validator.
 
 Two-pass validation:
   Pass 1 — blacklist: reject steps starting with vague verbs
-  Pass 2 — structure: [verb 1-4 chars] + [specific object ≥4 chars], total 8-30 chars
+  Pass 2 — structure: [verb] + [specific object], total 15-100 chars
 
 Returns (is_valid: bool, error: str | None, verb: str | None, object_text: str | None)
 """
@@ -12,36 +12,35 @@ import re
 from typing import Optional
 
 # Verbs that indicate vague/non-actionable steps
-BLACKLIST_VERBS = {"优化", "学习", "思考", "修改", "了解", "研究", "考虑", "整理"}
+BLACKLIST_VERBS = {"optimize", "learn", "think", "modify", "understand", "research", "consider", "organize"}
 
-# Regex: verb (1-4 CJK or ASCII chars) followed by space or directly by object
-# Object must be ≥4 chars; total description 8-30 chars
-_VERB_RE = re.compile(r"^([\u4e00-\u9fffA-Za-z]{1,4})([\u4e00-\u9fffA-Za-z0-9（）()，,、\-·\s]{4,})$")
+# Regex: first word (verb) + space + remaining content (object, ≥10 chars total after verb)
+_VERB_RE = re.compile(r"^([A-Za-z\u4e00-\u9fff]{1,15})\s+(.{5,})$", re.DOTALL)
 
 # Hardcoded fallback steps — guaranteed non-empty, one per pattern
 FALLBACK_STEPS: dict[str, dict] = {
     "Light": {
-        "description": "回顾当前项目的最近一个完成步骤",
+        "description": "Review the most recently completed step in your current project",
         "estimated_min": 5,
     },
     "Continuation": {
-        "description": "写下项目下一部分的第一句话",
+        "description": "Write the first sentence of the next part of your project",
         "estimated_min": 10,
     },
     "Completion": {
-        "description": "填写当前结构块中最后一个空白字段",
+        "description": "Fill in the last remaining blank field in the current block",
         "estimated_min": 10,
     },
     "Decomposition": {
-        "description": "把当前卡住的任务拆成两个更小的步骤并写下来",
+        "description": "Break the current stuck task into two smaller steps and write them down",
         "estimated_min": 5,
     },
     "Recovery": {
-        "description": "浏览一遍上次工作留下的内容",
+        "description": "Skim through the content left from your last work session",
         "estimated_min": 5,
     },
     "Refinement": {
-        "description": "检查项目中一个已完成段落的措辞",
+        "description": "Check the wording of one completed paragraph in your project",
         "estimated_min": 10,
     },
 }
@@ -58,20 +57,20 @@ def validate_step(description: str) -> tuple[bool, Optional[str], Optional[str],
     description = description.strip()
 
     # Pass 1: blacklist
-    for bad_verb in BLACKLIST_VERBS:
-        if description.startswith(bad_verb):
-            return False, f"步骤不能以「{bad_verb}」开头，请用更具体的动作动词", None, None
+    first_word = description.split()[0].lower() if description.split() else ""
+    if first_word in BLACKLIST_VERBS:
+        return False, f"Step cannot start with \"{first_word}\" — use a more specific action verb", None, None
 
     # Pass 2: structure check
     total_len = len(description)
-    if total_len < 8:
-        return False, f"步骤描述太短（{total_len}字），至少需要8字", None, None
-    if total_len > 30:
-        return False, f"步骤描述太长（{total_len}字），不能超过30字", None, None
+    if total_len < 15:
+        return False, f"Step description too short ({total_len} chars), minimum 15 chars required", None, None
+    if total_len > 100:
+        return False, f"Step description too long ({total_len} chars), maximum 100 chars allowed", None, None
 
     m = _VERB_RE.match(description)
     if not m:
-        return False, "步骤格式应为：[动词1-4字] + [具体对象≥4字]", None, None
+        return False, "Step format should be: [verb] + [specific object]", None, None
 
     verb = m.group(1)
     object_text = m.group(2).strip()

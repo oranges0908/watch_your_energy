@@ -23,13 +23,13 @@ async def suggest_block_titles(project_title: str) -> list[str]:
     """
     from agent.llm_client import generate_text  # avoid circular import at module load
 
-    system = "你是项目结构规划助手，帮用户将目标拆解为4个清晰的结构块。"
+    system = "You are a project structure planner. Help users break down their goal into 4 clear structure blocks."
     user = (
-        f"项目目标：{project_title}\n"
-        "请为该项目推荐4个结构块名称，要求：\n"
-        "- 每个名称2-8字，直接体现项目具体内容\n"
-        "- 前3个是并列的主要工作内容，最后1个是收尾/总结类\n"
-        '只返回JSON数组，例：["工作经历", "项目经历", "技能介绍", "整体润色"]'
+        f"Project goal: {project_title}\n"
+        "Suggest 4 structure block names for this project:\n"
+        "- Each name should be 2–5 words, directly reflecting specific project content\n"
+        "- The first 3 are parallel main work areas; the last 1 is a wrap-up/summary\n"
+        'Return only a JSON array, e.g.: ["Work Experience", "Project Experience", "Skills", "Final Polish"]'
     )
     try:
         text = await generate_text(system, user, max_tokens=20480)
@@ -41,7 +41,7 @@ async def suggest_block_titles(project_title: str) -> list[str]:
             return [str(s)[:20] for s in data]
     except Exception as exc:
         logger.warning("suggest_block_titles failed: %s", exc)
-    return ["项目1", "项目2", "项目3", "总结"]
+    return ["Part 1", "Part 2", "Part 3", "Wrap-up"]
 
 
 async def create_project(
@@ -61,7 +61,7 @@ async def create_project(
     # Enforce hard limit
     count = await project_repo.count_active(db)
     if count >= MAX_ACTIVE_PROJECTS:
-        raise ValueError(f"最多{MAX_ACTIVE_PROJECTS}个活跃项目")
+        raise ValueError(f"Maximum {MAX_ACTIVE_PROJECTS} active projects allowed")
 
     # Create project row
     project = await project_repo.create(db, title)

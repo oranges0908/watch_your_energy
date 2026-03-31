@@ -45,12 +45,12 @@ def mock_agent():
         n = call_count["n"]
         # Vary verb+object so diversity tests pass
         descriptions = [
-            "写项目1的第一句话（描述你做了什么）",
-            "把项目2的标题改成一行以内",
-            "检查项目3中一个已完成段落的措辞",
-            "列出总结中还没解决的两个问题",
-            "填写当前结构块中最后一个空白字段",
-            "在项目1中填入核心收获的要点",
+            "Write the opening sentence of Part 1 (describe what you did)",
+            "Trim the title of Part 2 to one line",
+            "Check the wording of one completed paragraph in Part 3",
+            "List two unresolved issues remaining in Wrap-up",
+            "Complete the last blank field in the current block",
+            "Fill in your key takeaways in Part 1",
         ]
         desc = descriptions[(n - 1) % len(descriptions)]
         pattern = "Light" if trigger == "low_energy" else (
@@ -122,7 +122,7 @@ async def client(mock_agent):
 
 # ── Helper ────────────────────────────────────────────────────────────────────
 
-async def create_test_project(client, title="优化简历"):
+async def create_test_project(client, title="Improve my resume"):
     resp = await client.post("/projects", json={"title": title, "completed_block_positions": []})
     assert resp.status_code == 201, resp.text
     return resp.json()
@@ -201,13 +201,13 @@ async def test_D_low_energy_returns_light_step(client):
 @pytest.mark.asyncio
 async def test_E_project_limit_enforced(client):
     for i in range(config.MAX_ACTIVE_PROJECTS):
-        await create_test_project(client, title=f"项目{i}")
+        await create_test_project(client, title=f"Project {i}")
 
     resp = await client.post(
-        "/projects", json={"title": "第四个项目", "completed_block_positions": []}
+        "/projects", json={"title": "Fourth project", "completed_block_positions": []}
     )
     assert resp.status_code == 400
-    assert "最多" in resp.json()["detail"]
+    assert "Maximum" in resp.json()["detail"]
 
 
 # ── Scenario F: Interruption detection ───────────────────────────────────────
@@ -306,12 +306,12 @@ async def test_get_state_with_project(client):
 
 @pytest.mark.asyncio
 async def test_list_projects(client):
-    await create_test_project(client, "项目一")
+    await create_test_project(client, "My project")
     resp = await client.get("/projects")
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 1
-    assert data[0]["title"] == "项目一"
+    assert data[0]["title"] == "My project"
 
 
 @pytest.mark.asyncio
@@ -323,8 +323,8 @@ async def test_get_project_blocks(client):
     assert resp.status_code == 200
     blocks = resp.json()
     assert len(blocks) == 4
-    assert blocks[0]["title"] == "项目1"
-    assert blocks[-1]["title"] == "总结"
+    assert blocks[0]["title"] == "Part 1"
+    assert blocks[-1]["title"] == "Wrap-up"
 
 
 @pytest.mark.asyncio

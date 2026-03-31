@@ -47,7 +47,7 @@ class StepCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '正在进行中…',
+                  'In progress…',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                   ),
@@ -59,7 +59,7 @@ class StepCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '预计 ${step.estimatedMin} 分钟',
+              'Est. ${step.estimatedMin} min',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.outline,
               ),
@@ -81,7 +81,7 @@ class StepCard extends StatelessWidget {
                     const Text('🌙', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 4),
                     Text(
-                      '轻量但有进展',
+                      'Light but making progress',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSecondaryContainer,
                       ),
@@ -111,7 +111,7 @@ class AnimatedStepCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (step == null) {
-      return const Center(child: Text('暂无待执行步骤'));
+      return const Center(child: Text('No pending steps'));
     }
     return Center(
       child: AnimatedSwitcher(

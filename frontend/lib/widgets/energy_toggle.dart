@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:watch_your_energy/providers/app_state_provider.dart';
 
-/// Two ChoiceChips — ⚡ 正常 / 🌙 低能量.
+/// Two ChoiceChips — ⚡ Normal / 🌙 Low energy.
 /// Shows a hint text when low-energy mode is active.
 /// Disabled during API loading.
 class EnergyToggle extends ConsumerWidget {
@@ -23,7 +23,7 @@ class EnergyToggle extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ChoiceChip(
-                label: const Text('⚡ 正常'),
+                label: const Text('⚡ Normal'),
                 selected: !isLow,
                 onSelected: isLoading
                     ? null
@@ -33,7 +33,7 @@ class EnergyToggle extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               ChoiceChip(
-                label: const Text('🌙 低能量'),
+                label: const Text('🌙 Low energy'),
                 selected: isLow,
                 onSelected: isLoading
                     ? null
@@ -55,7 +55,7 @@ class EnergyToggle extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                '已切换到低能量模式 · 轻量但有进展',
+                'Low energy mode · light steps, still making progress',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey,
                     ),

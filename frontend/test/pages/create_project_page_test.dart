@@ -66,6 +66,14 @@ Widget _buildApp(MockApiService api) {
   );
 }
 
+// Navigate to Step 2 and wait for suggestions to load.
+Future<void> _goToStep2(WidgetTester tester) async {
+  await tester.enterText(find.byType(TextField), '优化简历');
+  await tester.pump();
+  await tester.tap(find.text('Next'));
+  await tester.pumpAndSettle();
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
@@ -106,34 +114,73 @@ void main() {
     expect(btn.onPressed, isNotNull);
   });
 
-  testWidgets('Step1→Step2: 加载完成后显示LLM推荐的4个块', (tester) async {
+  // ── Step 2: display ───────────────────────────────────────────────────────
+
+  testWidgets('Step2: 加载完成后显示LLM推荐的4个TextField', (tester) async {
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
+    await _goToStep2(tester);
 
-    await tester.enterText(find.byType(TextField), '优化简历');
-    await tester.pump();
-    await tester.tap(find.text('下一步'));
-    await tester.pumpAndSettle(); // waits for suggestBlocks to complete
-
-    expect(find.byType(CheckboxListTile), findsNWidgets(4));
-    expect(find.text('工作经历'), findsOneWidget);
-    expect(find.text('项目经历'), findsOneWidget);
-    expect(find.text('技能介绍'), findsOneWidget);
-    expect(find.text('整体润色'), findsOneWidget);
+    // Step 1 had 1 TextField; Step 2 has 4 block TextFields
+    expect(find.byType(TextField), findsNWidgets(4));
+    expect(find.widgetWithText(TextField, '工作经历'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '项目经历'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '技能介绍'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '整体润色'), findsOneWidget);
   });
 
   testWidgets('Step2: 「创建并开始」按钮可点击', (tester) async {
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
-
-    await tester.enterText(find.byType(TextField), '优化简历');
-    await tester.pump();
-    await tester.tap(find.text('下一步'));
-    await tester.pumpAndSettle();
+    await _goToStep2(tester);
 
     final btn = tester.widget<FilledButton>(find.byType(FilledButton));
     expect(btn.onPressed, isNotNull);
   });
+
+  // ── Step 2: add / delete ──────────────────────────────────────────────────
+
+  testWidgets('Step2: 点击「添加结构块」增加一行', (tester) async {
+    await tester.pumpWidget(_buildApp(mockApi));
+    await tester.pumpAndSettle();
+    await _goToStep2(tester);
+
+    await tester.tap(find.text('Add block'));
+    await tester.pump();
+
+    expect(find.byType(TextField), findsNWidgets(5));
+  });
+
+  testWidgets('Step2: 删除一行后剩3个TextField', (tester) async {
+    await tester.pumpWidget(_buildApp(mockApi));
+    await tester.pumpAndSettle();
+    await _goToStep2(tester);
+
+    // Tap the first close/delete button
+    await tester.tap(find.byIcon(Icons.close).first);
+    await tester.pump();
+
+    expect(find.byType(TextField), findsNWidgets(3));
+  });
+
+  testWidgets('Step2: 只剩1行时删除按钮禁用', (tester) async {
+    await tester.pumpWidget(_buildApp(mockApi));
+    await tester.pumpAndSettle();
+    await _goToStep2(tester);
+
+    // Delete down to 1 block
+    for (int i = 0; i < 3; i++) {
+      await tester.tap(find.byIcon(Icons.close).first);
+      await tester.pump();
+    }
+
+    final deleteBtn = tester.widget<IconButton>(
+      find.widgetWithIcon(IconButton, Icons.close),
+    );
+    expect(deleteBtn.onPressed, isNull);
+  });
+
+  // ── Submit ────────────────────────────────────────────────────────────────
 
   testWidgets('提交成功：调用postProject并导航到"/"', (tester) async {
     final newState = _makeState();
@@ -144,13 +191,9 @@ void main() {
 
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
+    await _goToStep2(tester);
 
-    await tester.enterText(find.byType(TextField), '优化简历');
-    await tester.pump();
-    await tester.tap(find.text('下一步'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('创建并开始'));
+    await tester.tap(find.text('Create & Start'));
     await tester.pumpAndSettle();
 
     verify(() => mockApi.postProject('优化简历', any(), any())).called(1);

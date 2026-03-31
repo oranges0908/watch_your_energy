@@ -92,7 +92,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('写项目1的第一句话'), findsOneWidget);
-    expect(find.text('预计 10 分钟'), findsOneWidget);
+    expect(find.text('Est. 10 min'), findsOneWidget);
     expect(find.text('优化简历'), findsOneWidget);
     expect(find.text('20%'), findsOneWidget);
   });
@@ -107,17 +107,17 @@ void main() {
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
 
-    // idle: 开始 / 换一个 visible
-    expect(find.text('开始'), findsOneWidget);
-    expect(find.text('换一个'), findsOneWidget);
+    // idle: Start / Try another visible
+    expect(find.text('Start'), findsOneWidget);
+    expect(find.text('Try another'), findsOneWidget);
 
-    await tester.tap(find.text('开始'));
+    await tester.tap(find.text('Start'));
     await tester.pump();
 
-    // executing: 完成 / 我卡住了; no 换一个
-    expect(find.text('完成'), findsOneWidget);
-    expect(find.text('我卡住了'), findsOneWidget);
-    expect(find.text('换一个'), findsNothing);
+    // executing: Done / I'm stuck; no Try another
+    expect(find.text('Done'), findsOneWidget);
+    expect(find.text("I'm stuck"), findsOneWidget);
+    expect(find.text('Try another'), findsNothing);
   });
 
   // ── 换一个 button ─────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ void main() {
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('换一个'));
+    await tester.tap(find.text('Try another'));
     await tester.pumpAndSettle();
 
     verify(() => mockApi.postStepSkip('step-1')).called(1);
@@ -156,16 +156,16 @@ void main() {
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('开始'));
+    await tester.tap(find.text('Start'));
     await tester.pump();
 
-    await tester.tap(find.text('完成'));
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
     verify(() => mockApi.postStepComplete('step-1')).called(1);
     expect(find.text('项目1已推进'), findsOneWidget);
     // Returns to idle after complete
-    expect(find.text('开始'), findsOneWidget);
+    expect(find.text('Start'), findsOneWidget);
 
     // Advance clock to consume the 2-second auto-clear timer.
     await tester.pump(const Duration(seconds: 3));
@@ -184,15 +184,15 @@ void main() {
     await tester.pumpWidget(_buildApp(mockApi));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('开始'));
+    await tester.tap(find.text('Start'));
     await tester.pump();
 
-    await tester.tap(find.text('我卡住了'));
+    await tester.tap(find.text("I'm stuck"));
     await tester.pumpAndSettle();
 
     verify(() => mockApi.postStepStuck('step-1')).called(1);
     expect(find.text('把第一句话缩短为10字以内'), findsOneWidget);
     // Returns to idle after stuck
-    expect(find.text('开始'), findsOneWidget);
+    expect(find.text('Start'), findsOneWidget);
   });
 }

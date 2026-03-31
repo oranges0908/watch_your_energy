@@ -3,8 +3,8 @@ import 'package:watch_your_energy/providers/execution_state_provider.dart';
 
 /// Action button row for the home page.
 ///
-/// idle      state: [开始（主）] [换一个] [我卡住了]
-/// executing state: [完成（主）] [我卡住了]
+/// idle      state: [Start (primary)] [Try another] [I'm stuck]
+/// executing state: [Done (primary)] [I'm stuck]
 /// isLoading : buttons disabled; primary button shows a spinner.
 class ActionButtons extends StatelessWidget {
   final ExecutionState executionState;
@@ -37,7 +37,7 @@ class ActionButtons extends StatelessWidget {
           if (!isExecuting) ...[
             FilledButton(
               onPressed: isLoading ? null : onStart,
-              child: const Text('开始'),
+              child: const Text('Start'),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
@@ -48,12 +48,12 @@ class ActionButtons extends StatelessWidget {
                       width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('换一个'),
+                  : const Text('Try another'),
             ),
             const SizedBox(height: 4),
             TextButton(
               onPressed: isLoading ? null : onStuck,
-              child: const Text('我卡住了'),
+              child: const Text("I'm stuck"),
             ),
           ] else ...[
             FilledButton(
@@ -68,12 +68,12 @@ class ActionButtons extends StatelessWidget {
                             AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text('完成'),
+                  : const Text('Done'),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: isLoading ? null : onStuck,
-              child: const Text('我卡住了'),
+              child: const Text("I'm stuck"),
             ),
           ],
         ],

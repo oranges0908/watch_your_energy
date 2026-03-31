@@ -49,11 +49,11 @@ class HomePage extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('加载失败: ${asyncState.error}'),
+              Text('Failed to load: ${asyncState.error}'),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => ref.invalidate(appStateProvider),
-                child: const Text('重试'),
+                child: const Text('Retry'),
               ),
             ],
           ),

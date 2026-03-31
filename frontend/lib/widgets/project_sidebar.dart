@@ -24,7 +24,7 @@ class ProjectSidebar extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
             child: Text(
-              '我的项目',
+              'My Projects',
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -36,7 +36,7 @@ class ProjectSidebar extends ConsumerWidget {
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (_, __) =>
-                  const Center(child: Text('加载失败')),
+                  const Center(child: Text('Failed to load')),
               data: (projects) => ListView.builder(
                 itemCount: projects.length,
                 itemBuilder: (context, index) {
@@ -77,7 +77,7 @@ class ProjectSidebar extends ConsumerWidget {
             data: (projects) {
               final canCreate = projects.length < 3;
               return Tooltip(
-                message: canCreate ? '' : '最多同时推进3个',
+                message: canCreate ? '' : 'Maximum 3 active projects',
                 child: ListTile(
                   dense: true,
                   contentPadding:
@@ -89,7 +89,7 @@ class ProjectSidebar extends ConsumerWidget {
                     color: canCreate ? null : Colors.grey,
                   ),
                   title: Text(
-                    '新建',
+                    'New',
                     style: TextStyle(
                       fontSize: 13,
                       color: canCreate ? null : Colors.grey,

@@ -149,7 +149,7 @@ class AppStateNotifier extends AsyncNotifier<AppState> {
   }
 
   void _setError() {
-    ref.read(errorMessageProvider.notifier).state = '网络异常，请重试';
+    ref.read(errorMessageProvider.notifier).state = 'Network error, please retry';
   }
 }
 

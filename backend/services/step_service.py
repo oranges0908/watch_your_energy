@@ -160,7 +160,7 @@ async def complete_step(db: aiosqlite.Connection, step_id: str) -> StepResponse:
 
     # Get block title for feedback
     block = await block_repo.get(db, block_id) if block_id else None
-    feedback_message = f"{block['title']}已推进" if block else None
+    feedback_message = f"{block['title']} advanced" if block else None
 
     # Generate next step
     response = await generate_next(db, project_id, "complete")

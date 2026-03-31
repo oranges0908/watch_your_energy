@@ -17,7 +17,7 @@ class BlockListItem extends StatelessWidget {
     return ListTile(
       leading: _statusIcon(block.status, theme),
       title: Text(block.title),
-      subtitle: showProgress ? Text('已完成 ${block.progressPct}%') : null,
+      subtitle: showProgress ? Text('${block.progressPct}% done') : null,
     );
   }
 

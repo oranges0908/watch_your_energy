@@ -122,23 +122,23 @@ void main() {
 
   // ── Archive button visibility ─────────────────────────────────────────────
 
-  testWidgets('all blocks completed → 显示「归档此项目」按钮', (tester) async {
+  testWidgets('all blocks completed → 显示「Archive project」按钮', (tester) async {
     await tester.pumpWidget(_buildApp(mockApi, _allCompleteBlocks));
     await tester.pumpAndSettle();
 
-    expect(find.text('归档此项目'), findsOneWidget);
+    expect(find.text('Archive project'), findsOneWidget);
   });
 
-  testWidgets('blocks未全部完成 → 不显示「归档此项目」按钮', (tester) async {
+  testWidgets('blocks未全部完成 → 不显示「Archive project」按钮', (tester) async {
     await tester.pumpWidget(_buildApp(mockApi, _partialBlocks));
     await tester.pumpAndSettle();
 
-    expect(find.text('归档此项目'), findsNothing);
+    expect(find.text('Archive project'), findsNothing);
   });
 
   // ── Archive action ────────────────────────────────────────────────────────
 
-  testWidgets('tap「归档此项目」→ 调用deleteProject + 导航到"/"', (tester) async {
+  testWidgets('tap「Archive project」→ 调用deleteProject + 导航到"/"', (tester) async {
     when(() => mockApi.deleteProject('proj-1')).thenAnswer((_) async {});
     when(() => mockApi.getState()).thenAnswer((_) async => const AppState(
           step: null,
@@ -151,7 +151,7 @@ void main() {
     await tester.pumpWidget(_buildApp(mockApi, _allCompleteBlocks));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('归档此项目'));
+    await tester.tap(find.text('Archive project'));
     await tester.pumpAndSettle();
 
     verify(() => mockApi.deleteProject('proj-1')).called(1);

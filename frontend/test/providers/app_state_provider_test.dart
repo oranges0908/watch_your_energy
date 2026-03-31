@@ -255,7 +255,7 @@ void main() {
     await container.read(appStateProvider.future);
     await container.read(appStateProvider.notifier).onSkip();
 
-    expect(container.read(errorMessageProvider), '网络异常，请重试');
+    expect(container.read(errorMessageProvider), 'Network error, please retry');
     // State rolled back
     expect(container.read(appStateProvider).value?.step?.id, 'step-1');
   });
@@ -271,7 +271,7 @@ void main() {
     await container.read(appStateProvider.future);
     await container.read(appStateProvider.notifier).archiveProject('proj-1');
 
-    expect(container.read(errorMessageProvider), '网络异常，请重试');
+    expect(container.read(errorMessageProvider), 'Network error, please retry');
     expect(container.read(appStateProvider).value?.step?.id, 'step-1');
   });
 }

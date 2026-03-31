@@ -157,7 +157,7 @@ async def generate_step(
             candidate["description"],
             result["error"],
         )
-        error_hint = f"上次生成的步骤「{candidate['description']}」验证失败：{result['error']}。请重新生成，确保格式正确。"
+        error_hint = f"The previously generated step \"{candidate['description']}\" failed validation: {result['error']}. Please regenerate and ensure the format is correct."
 
         if attempt == MAX_LLM_RETRIES:
             fallback = get_fallback(pattern)
@@ -203,4 +203,4 @@ def _get_project_title(blocks: list[dict]) -> str:
     The caller (step_service) should pass the title separately.
     For now we return a generic label — step_service will override via context injection.
     """
-    return "(项目)"
+    return "(project)"

@@ -16,18 +16,18 @@ class ProgressPage extends ConsumerWidget {
 
     if (projectId == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('项目进展')),
-        body: const Center(child: Text('暂无活跃项目')),
+        appBar: AppBar(title: const Text('Progress')),
+        body: const Center(child: Text('No active project')),
       );
     }
 
     final asyncDetail = ref.watch(projectDetailProvider(projectId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('项目进展')),
+      appBar: AppBar(title: const Text('Progress')),
       body: asyncDetail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败: $e')),
+        error: (e, _) => Center(child: Text('Failed to load: $e')),
         data: (detail) {
           final allComplete =
               detail.blocks.isNotEmpty &&
@@ -102,7 +102,7 @@ class ProgressPage extends ConsumerWidget {
                               ),
                             ),
                           )
-                        : const Text('归档此项目'),
+                        : const Text('Archive project'),
                   ),
                 ),
             ],

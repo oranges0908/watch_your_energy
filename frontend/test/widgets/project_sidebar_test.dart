@@ -103,7 +103,7 @@ void main() {
 
     final tile = tester.widget<ListTile>(
       find.ancestor(
-        of: find.text('新建'),
+        of: find.text('New'),
         matching: find.byType(ListTile),
       ),
     );
@@ -121,7 +121,7 @@ void main() {
 
     final tile = tester.widget<ListTile>(
       find.ancestor(
-        of: find.text('新建'),
+        of: find.text('New'),
         matching: find.byType(ListTile),
       ),
     );

@@ -17,14 +17,35 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
   String _title = '';
 
   // Step 2 state
-  List<String> _blockTitles = [];
+  final List<TextEditingController> _controllers = [];
   bool _loadingSuggestions = false;
   final Set<int> _checkedPositions = {};
   bool _isSubmitting = false;
 
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   bool get _canGoNext => _title.trim().isNotEmpty;
+
+  bool get _canSubmit =>
+      _controllers.isNotEmpty &&
+      _controllers.any((c) => c.text.trim().isNotEmpty);
+
+  void _setTitles(List<String> titles) {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    _controllers
+      ..clear()
+      ..addAll(titles.map((t) => TextEditingController(text: t)));
+  }
 
   Future<void> _goToStep2() async {
     setState(() {
@@ -36,36 +57,64 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
     try {
       final titles =
           await ref.read(apiServiceProvider).suggestBlocks(_title.trim());
-      if (mounted) setState(() => _blockTitles = titles);
+      if (mounted) setState(() => _setTitles(titles));
     } catch (_) {
-      // Fallback to generic titles on error
       if (mounted) {
-        setState(() => _blockTitles = ['项目1', '项目2', '项目3', '总结']);
+        setState(() => _setTitles(['Part 1', 'Part 2', 'Part 3', 'Wrap-up']));
       }
     } finally {
       if (mounted) setState(() => _loadingSuggestions = false);
     }
   }
 
-  void _goToStep1() => setState(() {
-        _step = 1;
-        _blockTitles = [];
-      });
+  void _goToStep1() {
+    setState(() {
+      _step = 1;
+      _setTitles([]);
+    });
+  }
+
+  void _addBlock() {
+    setState(() {
+      _controllers.add(TextEditingController());
+    });
+  }
+
+  void _deleteBlock(int index) {
+    setState(() {
+      _controllers[index].dispose();
+      _controllers.removeAt(index);
+      // Remap checked positions after deletion
+      final updated = <int>{};
+      for (final pos in _checkedPositions) {
+        if (pos < index) updated.add(pos);
+        if (pos > index) updated.add(pos - 1);
+      }
+      _checkedPositions
+        ..clear()
+        ..addAll(updated);
+    });
+  }
 
   Future<void> _submit() async {
+    final blockTitles = _controllers
+        .map((c) => c.text.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+
     setState(() => _isSubmitting = true);
     try {
       await ref.read(appStateProvider.notifier).createProject(
             _title.trim(),
             _checkedPositions.toList(),
-            _blockTitles,
+            blockTitles,
           );
       ref.invalidate(projectListProvider);
       if (mounted) context.go('/');
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('创建失败，请重试')),
+          const SnackBar(content: Text('Failed to create, please retry')),
         );
       }
     } finally {
@@ -79,7 +128,7 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('新建项目'),
+        title: const Text('New Project'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: _step == 2 ? _goToStep1 : () => context.pop(),
@@ -101,7 +150,7 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          '你想推进什么？',
+          'What do you want to advance?',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
@@ -109,7 +158,7 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
           autofocus: true,
           maxLines: 1,
           decoration: const InputDecoration(
-            hintText: '例：优化简历',
+            hintText: 'e.g. Improve my resume',
             border: OutlineInputBorder(),
           ),
           onChanged: (v) => setState(() => _title = v),
@@ -117,7 +166,7 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
         const Spacer(),
         FilledButton(
           onPressed: _canGoNext ? _goToStep2 : null,
-          child: const Text('下一步'),
+          child: const Text('Next'),
         ),
       ],
     );
@@ -130,17 +179,17 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          '已完成哪些部分？',
+          'Confirm structure',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 4),
         Text(
-          '勾选已完成的结构块，跳过这些块直接继续',
+          'Edit, add or remove blocks · check any already completed',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.outline,
               ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         if (_loadingSuggestions)
           const Expanded(
             child: Center(
@@ -149,32 +198,33 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 12),
-                  Text('正在为你推荐结构块…'),
+                  Text('Generating block suggestions…'),
                 ],
               ),
             ),
           )
         else ...[
-          ..._blockTitles.asMap().entries.map((entry) {
-            final position = entry.key;
-            final title = entry.value;
-            return CheckboxListTile(
-              title: Text(title),
-              value: _checkedPositions.contains(position),
-              onChanged: (checked) {
-                setState(() {
-                  if (checked == true) {
-                    _checkedPositions.add(position);
-                  } else {
-                    _checkedPositions.remove(position);
-                  }
-                });
-              },
-            );
-          }),
-          const Spacer(),
+          // Block list scrolls independently
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: List.generate(
+                  _controllers.length,
+                  (index) => _buildBlockRow(index),
+                ),
+              ),
+            ),
+          ),
+          // Add + Submit always visible at bottom
+          TextButton.icon(
+            onPressed: _addBlock,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add block'),
+          ),
+          const SizedBox(height: 4),
           FilledButton(
-            onPressed: _isSubmitting ? null : _submit,
+            onPressed: (_isSubmitting || !_canSubmit) ? null : _submit,
             child: _isSubmitting
                 ? const SizedBox(
                     height: 20,
@@ -185,10 +235,59 @@ class _CreateProjectPageState extends ConsumerState<CreateProjectPage> {
                           AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text('创建并开始'),
+                : const Text('Create & Start'),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildBlockRow(int index) {
+    final canDelete = _controllers.length > 1;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          // ── Completed checkbox ────────────────────────────────────────
+          Checkbox(
+            value: _checkedPositions.contains(index),
+            onChanged: (checked) {
+              setState(() {
+                if (checked == true) {
+                  _checkedPositions.add(index);
+                } else {
+                  _checkedPositions.remove(index);
+                }
+              });
+            },
+          ),
+          // ── Editable title ───────────────────────────────────────────
+          Expanded(
+            child: TextField(
+              controller: _controllers[index],
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+          // ── Delete button ─────────────────────────────────────────────
+          IconButton(
+            icon: Icon(
+              Icons.close,
+              size: 18,
+              color: canDelete
+                  ? Theme.of(context).colorScheme.error
+                  : Colors.grey.shade300,
+            ),
+            tooltip: 'Remove',
+            onPressed: canDelete ? () => _deleteBlock(index) : null,
+          ),
+        ],
+      ),
     );
   }
 }

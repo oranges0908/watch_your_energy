@@ -16,14 +16,14 @@ from agent.validators import validate_step, get_fallback, FALLBACK_STEPS
 # ── Blacklist tests ───────────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("desc", [
-    "优化简历的措辞",
-    "学习新的项目管理方法",
-    "思考项目经历如何呈现",
-    "修改项目1的描述",
-    "了解行业背景",
-    "研究竞争对手案例",
-    "考虑更好的表达方式",
-    "整理文档结构",
+    "Optimize the wording of my resume",
+    "Learn a new project management method",
+    "Think about how to present project experience",
+    "Modify the description of Part 1",
+    "Understand the industry background",
+    "Research competitor case studies",
+    "Consider a better way to phrase this",
+    "Organize the document structure",
 ])
 def test_blacklist_rejected(desc):
     valid, error, verb, obj = validate_step(desc)
@@ -36,12 +36,12 @@ def test_blacklist_rejected(desc):
 # ── Valid step tests ──────────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("desc,expected_verb", [
-    ("写项目2的第一句话（描述你做了什么）", "写"),
-    ("把项目1的标题改成一行以内", "把"),
-    ("在总结块中填入你的核心收获", "在总结块中填入"),
-    ("列出项目3中还没解决的两个问题", "列出"),
-    ("检查项目中一个已完成段落的措辞", "检查"),
-    ("填写当前结构块中最后一个空白字段", "填写"),
+    ("Write the opening sentence of Part 2 (describe what you did)", "Write"),
+    ("Trim the title of Part 1 to one line", "Trim"),
+    ("Fill in your key takeaway in the Wrap-up block", "Fill"),
+    ("List two unresolved issues remaining in Part 3", "List"),
+    ("Check the wording of one completed paragraph in your project", "Check"),
+    ("Complete the last blank field in the current block", "Complete"),
 ])
 def test_valid_steps(desc, expected_verb):
     valid, error, verb, obj = validate_step(desc)
@@ -54,31 +54,31 @@ def test_valid_steps(desc, expected_verb):
 # ── Length boundary tests ─────────────────────────────────────────────────────
 
 def test_too_short():
-    valid, error, _, _ = validate_step("写文")
+    valid, error, _, _ = validate_step("Write it")
     assert not valid
-    assert "太短" in error or "格式" in error
+    assert "short" in error or "format" in error.lower()
 
 
 def test_too_long():
-    long_desc = "写" + "项目1中关于具体工作内容的详细描述，包括所有背景信息和上下文" * 2
+    long_desc = "Write " + "a very detailed description of the project content including all background context and additional notes " * 2
     valid, error, _, _ = validate_step(long_desc)
     assert not valid
-    assert "太长" in error or "格式" in error
+    assert "long" in error or "format" in error.lower()
 
 
 # ── Structure tests ───────────────────────────────────────────────────────────
 
 def test_verb_only_fails():
-    valid, error, _, _ = validate_step("写一下")
+    valid, error, _, _ = validate_step("Write a bit")
+    # "Write a bit" is 11 chars — too short
     assert not valid
 
 
 def test_returns_verb_and_object_on_success():
-    valid, error, verb, obj = validate_step("写项目2的第一句话")
+    valid, error, verb, obj = validate_step("Write the opening sentence of Part 2")
     assert valid
-    # Regex greedily matches up to 4 CJK chars as verb; "写项目" is a valid 3-char verb
     assert verb is not None and len(verb) >= 1
-    assert obj is not None and len(obj) >= 4
+    assert obj is not None and len(obj) >= 5
 
 
 # ── Fallback tests ────────────────────────────────────────────────────────────

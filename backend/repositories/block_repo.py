@@ -9,7 +9,7 @@ import uuid
 import aiosqlite
 
 # Fixed block titles for every project
-BLOCK_TITLES = ["项目1", "项目2", "项目3", "总结"]
+BLOCK_TITLES = ["Part 1", "Part 2", "Part 3", "Wrap-up"]
 
 
 def _progress_to_status(pct: int) -> str:
@@ -33,9 +33,7 @@ async def create_bulk(
     Uses `titles` when provided (must be exactly 4); falls back to BLOCK_TITLES.
     Returns list of created block dicts.
     """
-    effective_titles = (
-        titles if titles and len(titles) == 4 else BLOCK_TITLES
-    )
+    effective_titles = titles if titles else BLOCK_TITLES
     now = int(time.time() * 1000)
     blocks = []
     for position, title in enumerate(effective_titles):
