@@ -1,14 +1,19 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:watch_your_energy/models/app_state.dart';
 import 'package:watch_your_energy/models/project.dart';
 import 'package:watch_your_energy/models/step.dart';
 
-// Base URL can be overridden at build time:
+// Base URL: on web, use the same origin (served from FastAPI).
+// On mobile, override at build time:
 //   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
-const String kApiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://localhost:8000',
-);
+String get kApiBaseUrl {
+  if (kIsWeb) return Uri.base.origin;
+  return const String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:8000',
+  );
+}
 
 /// Abstract interface — makes the service mockable in tests.
 abstract class ApiService {
