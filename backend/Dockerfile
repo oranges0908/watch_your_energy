@@ -18,6 +18,9 @@ COPY backend/ .
 # Embed the Flutter web build so FastAPI can serve it
 COPY --from=flutter-builder /frontend/build/web ./static
 
+# Ensure /data exists so SQLite can write even without a mounted volume
+RUN mkdir -p /data
+
 # Default port; overridden by $PORT at runtime (Railway sets this automatically)
 ENV PORT=8000
 
