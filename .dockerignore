@@ -15,8 +15,9 @@
 **/*.db-shm
 **/*.db-wal
 
-# Frontend (not deployed in this image)
-frontend/
+# Frontend build artifacts (source is needed for multi-stage build)
+frontend/build/
+frontend/.dart_tool/
 
 # Docs
 doc/
